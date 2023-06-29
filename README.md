@@ -157,9 +157,11 @@ Sets the given logger's level to the given level.
 
 ## Docker Containers
 You can use the docker image from Docker-Hub, two diffrent ways to do that:
-* Pull the docker image through Docker-Desktop by using the tag: "roytoledano/todo-server:1.0"
+* Pull the docker image through Docker-Desktop by using the tag: ```roytoledano/todo-server:1.0```
 * Use the following command in the terminal:
-```docker pull roytoledano/todo-server:1.0```
+```
+   docker pull roytoledano/todo-server:1.0
+```
 (You need to install docker on your machine in order to run it properly)
 
 

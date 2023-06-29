@@ -130,6 +130,7 @@ public class ServerDbAndLogic {
             {
                 return index;
             }
+
             index++;
         }
         return -1;
