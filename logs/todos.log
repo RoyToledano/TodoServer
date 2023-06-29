@@ -1,0 +1,14 @@
+29-06-2023 12:02:56.431 INFO: Creating new TODO with Title [New Year] | request #1
+29-06-2023 12:02:56.571 INFO: Total TODOs count for state ALL is 1 | request #2
+29-06-2023 12:02:56.684 INFO: Extracting todos content. Filter: PENDING | Sorting by: TITLE | request #3
+29-06-2023 12:02:56.778 INFO: Update TODO id [5] state to DONE | request #4
+29-06-2023 12:02:56.778 ERROR: Error: no such TODO with id 5 | request #4
+29-06-2023 12:02:56.934 INFO: Creating new TODO with Title [Reception hours for kaplat] | request #6
+29-06-2023 12:02:56.934 DEBUG: Currently there are 1 TODOs in the system. New TODO will be assigned with id 2 | request #6
+29-06-2023 12:02:57.014 INFO: Total TODOs count for state PENDING is 2 | request #7
+29-06-2023 12:02:57.088 INFO: Removing todo id 2 | request #8
+29-06-2023 12:02:57.088 DEBUG: After removing todo id [2] there are 2 TODOs in the system | request #8
+29-06-2023 12:02:57.168 INFO: Update TODO id [1] state to LATE | request #9
+29-06-2023 12:02:57.168 DEBUG: Todo id [1] state change: PENDING --> LATE | request #9
+29-06-2023 12:02:57.213 INFO: Extracting todos content. Filter: LATE | Sorting by: null | request #10
+29-06-2023 12:02:57.213 DEBUG: There are a total of 1 todos in the system. The result holds 1 todos | request #10

@@ -1,0 +1,36 @@
+<Configuration status="warn">
+    <property name="LOG_DIR" value="./logs"/>
+    <property name="DATE_FORMAT" value="dd-MM-yyyy HH:mm:ss.SSS"/>
+
+    <appender name="consoleAppender" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{${DATE_FORMAT}} %level: %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <appender name="requestsAppender" class="ch.qos.logback.core.FileAppender">
+        <file>${LOG_DIR}/requests.log</file>
+        <append>false</append>
+        <encoder>
+            <pattern>%d{${DATE_FORMAT}} %level: %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <appender name="todoAppender" class="ch.qos.logback.core.FileAppender">
+        <file>${LOG_DIR}/todos.log</file>
+        <append>false</append>
+        <encoder>
+            <Pattern>%d{${DATE_FORMAT}} %level: %msg%n</Pattern>
+        </encoder>
+    </appender>
+
+    <logger name="request-logger" level="INFO">
+        <appender-ref ref="requestsAppender"/>
+        <appender-ref ref="consoleAppender"/>
+    </logger>
+
+    <logger name="todo-logger" level="INFO">
+        <appender-ref ref="todoAppender"/>
+    </logger>
+
+</Configuration>
