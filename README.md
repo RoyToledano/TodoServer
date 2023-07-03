@@ -13,11 +13,7 @@
 This is an HTTP server developed using Spring Boot and is a TODO app. TODO apps allow users to maintain a list of things they need to do.
 It features multiple endpoints which allow clients to manage the server's todos as well as setting logger levels for the server.
 
-This was a 3 part assignment in a course called "Practical tools for the industry pt.1".
-The course teaches concepts "on a high level" and for the implementation of the assignemnts we had to research and choose our own platforms and
-frameworks to develop on.
-
-This assignment focused on these concepts:
+This project focus on these concepts:
 1. Client-server model
 2. Logging 
 3. Containerization 
@@ -154,6 +150,15 @@ Query Parameter: **logger-level** Value: ERROR, INFO, DEBUG
 
 Sets the given logger's level to the given level.
 
+## Loggers
+The server keeps logs of all requests sent to it and all todos added. The log files are respectively called:
+* `requests.log:` In charge of logging each incoming request of any type to the server.
+* `todos.log:` In charge of logging information regarding the todo management
+
+Each log will hold the following structure ({} are placeholders):
+```
+{date-time} {log-level}: {log-message} | request #{request-number}
+```
 
 ## Docker Containers
 You can use the docker image from Docker-Hub, two diffrent ways to do that:
