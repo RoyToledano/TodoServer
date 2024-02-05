@@ -82,7 +82,9 @@ public class ServerHandler {
 
     // This endpoint returns the number of to-do's with the given status in the database
     @GetMapping("/todo/size")
-    public ResponseEntity<Object> returnTodosCount(@RequestParam(name = "status") String status, HttpServletRequest request)
+    public ResponseEntity<Object> returnTodosCount(@RequestParam(name = "status") String status,
+                                                   @RequestParam(name = "persistenceMethod") String persistenceMethod,
+                                                   HttpServletRequest request)
     {
         result = new JSONObject();
         int count;
@@ -92,6 +94,11 @@ public class ServerHandler {
         long timeOfStart = System.currentTimeMillis();
         loggers.createRequestLogInfo(request);
 
+        if(!persistenceMethod.equals("POSTGRES") && !persistenceMethod.equals("MONGO")){
+            String message = "Error: The given persistence method is invalid.";
+            result.put("errorMessage",message);
+            return ResponseEntity.badRequest().body(result.toString());
+        }
 
         count = DB.countTodos(status); // return -1 if the status is invalid.
         if(count == -1)
@@ -113,7 +120,10 @@ public class ServerHandler {
     // This endpoint return a list of to-do's data with the given status, and sorted by ID/Title/Due date.
     // If the endpoint doesn't receive a 'sortby' operator, the data will be sorted by ID.
     @GetMapping("/todo/content")
-    public ResponseEntity<Object> returnTodosData(@RequestParam(name = "status") String status, @RequestParam(name = "sortBy", required = false) String sortBy, HttpServletRequest request)
+    public ResponseEntity<Object> returnTodosData(@RequestParam(name = "status") String status,
+                                                  @RequestParam(name = "sortBy", required = false) String sortBy,
+                                                  @RequestParam(name = "persistenceMethod") String persistenceMethod,
+                                                  HttpServletRequest request)
     {
         result = new JSONObject();
 
@@ -121,6 +131,12 @@ public class ServerHandler {
         long timeOfEnd;
         long timeOfStart = System.currentTimeMillis();
         loggers.createRequestLogInfo(request);
+
+        if(!persistenceMethod.equals("POSTGRES") && !persistenceMethod.equals("MONGO")){
+            String message = "Error: The given persistence method is invalid.";
+            result.put("errorMessage",message);
+            return ResponseEntity.badRequest().body(result.toString());
+        }
 
         if(DB.checkStatusAndSortBy(status,sortBy)) // check is the requested params are valid.
         {
@@ -140,7 +156,9 @@ public class ServerHandler {
 
     // This endpoint receives an id of to-do, and update its status to the given one.
     @PutMapping("/todo")
-    private ResponseEntity<Object> updateTodoStatus(@RequestParam (name = "id") int id, @RequestParam (name = "status") String status, HttpServletRequest request)
+    private ResponseEntity<Object> updateTodoStatus(@RequestParam (name = "id") int id,
+                                                    @RequestParam (name = "status") String status,
+                                                    HttpServletRequest request)
     {
         JSONObject result = new JSONObject();
 
