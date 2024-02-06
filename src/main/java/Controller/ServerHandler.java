@@ -1,36 +1,46 @@
 package Controller;
 
-import ch.qos.logback.classic.Level;
 import com.fasterxml.jackson.databind.JsonNode;
-import java.util.*;
+
 import java.lang.*;
 
 import jakarta.servlet.http.HttpServletRequest;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.springframework.boot.logging.LogLevel;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.bind.annotation.*;
-import org.slf4j.*;
-import ch.qos.logback.classic.LoggerContext;
+import service.TodoMongoService;
+import service.TodoPostgreService;
+
 
 @RestController
+@RequestMapping("/todoServer")
 public class ServerHandler {
 
-    // DataBase:
-    ServerDbAndLogic DB = new ServerDbAndLogic();
+    // Server logic:
+    private final ServerLogic logic = new ServerLogic();
+    // DataBases:
+    @Autowired
+    private TodoPostgreService todoPostgreService;
+    @Autowired
+    private TodoMongoService todoMongoService;
 
     // Loggers, there are 2 loggers;
     // 'request-logger' - receive data about the server requests.
     // 'to-do-logger' - receive data about the database.
-    Loggers loggers = new Loggers();
+    private final Loggers loggers = new Loggers();
 
     // Json object:
     private JSONObject result;
 
+    public ServerHandler() {
+        logic.setTodosCounter(todoPostgreService.getTodosCount());
+        logic.setPostgreService(todoPostgreService);
+        logic.setMongoService(todoMongoService);
+    }
 
     // Return "OK" when reaching this endpoint.
     @GetMapping("/todo/health")
@@ -57,24 +67,23 @@ public class ServerHandler {
         long timeOfStart = System.currentTimeMillis();
         loggers.createRequestLogInfo(request);
 
-        if(DB.isTitleExists(reqTitle)) // in case title is invalid
+        if(logic.isTitleExists(reqTitle)) // in case title is invalid
         {
             String message = "Error: TODO with the title '" + reqTitle + "' already exists in the system";
             result.put("errorMessage",message);
             loggers.generalTodoLoggerError(message);
             return new ResponseEntity<>(result.toString(), HttpStatus.CONFLICT);
-
         }
-        else if (DB.isDueDateNotValid(reqDueDate)) // in case due date is in the past.
+        else if (logic.isDueDateNotValid(reqDueDate)) // in case due date is in the past.
         {
             String message = "Error: Can't create new TODO that its due date is in the past";
             result.put("errorMessage",message);
             loggers.generalTodoLoggerError(message);
             return ResponseEntity.status(HttpStatus.CONFLICT).body(result.toString());
         }
-        loggers.writeCreateTodoIntoLogger(reqTitle, DB.getTodosCounter());
-        DB.createTodo(reqTitle,reqContent,reqDueDate);
-        result.put("result", DB.getLastElement().getId());
+        loggers.writeCreateTodoIntoLogger(reqTitle, logic.getTodosCount());
+        logic.createTodo(reqTitle,reqContent,reqDueDate);
+        result.put("result", logic.getLastElement().getId());
         timeOfEnd = System.currentTimeMillis();
         loggers.createRequestLogDebug(timeOfEnd - timeOfStart);
         return new ResponseEntity<>(result.toString(),HttpStatus.OK);
@@ -100,7 +109,7 @@ public class ServerHandler {
             return ResponseEntity.badRequest().body(result.toString());
         }
 
-        count = DB.countTodos(status); // return -1 if the status is invalid.
+        count = logic.countTodos(status, persistenceMethod); // return -1 if the status is invalid.
         if(count == -1)
         {
             String message = "Error: The given status is invalid.";
@@ -138,16 +147,16 @@ public class ServerHandler {
             return ResponseEntity.badRequest().body(result.toString());
         }
 
-        if(DB.checkStatusAndSortBy(status,sortBy)) // check is the requested params are valid.
+        if(logic.checkStatusAndSortBy(status,sortBy)) // check is the requested params are valid.
         {
             String message = "Error: The given status or sortBy are invalid.";
             result.put("errorMessage",message);
             return ResponseEntity.badRequest().body(result.toString());
         }
 
-        JSONArray resultArr = DB.createJsonArray(sortBy,status); // creating json array.
+        JSONArray resultArr = logic.createJsonArray(sortBy,status, persistenceMethod); // creating json array.
         result.put("result", resultArr);
-        loggers.writeTodosDataIntoLogger(status,sortBy,resultArr.length(), DB.getTodosSize());
+        loggers.writeTodosDataIntoLogger(status,sortBy,resultArr.length(), logic.getTodosCount());
         timeOfEnd = System.currentTimeMillis();
         loggers.createRequestLogDebug(timeOfEnd - timeOfStart);
         return new ResponseEntity<>(result.toString(),HttpStatus.OK);
@@ -169,14 +178,14 @@ public class ServerHandler {
 
         loggers.writeUpdateTodoStatusBeforeUptade(id,status);
 
-        if(!DB.isGivenStatusValid(status)) // status is not valid
+        if(!logic.isGivenStatusValid(status)) // status is not valid
         {
             String message = "Error: The given status is invalid.";
             result.put("errorMessage",message);
             return ResponseEntity.badRequest().body(result.toString());
         }
 
-        String oldStatus = DB.isIdExistsAndUpdate(id, status); // return the old status, if to-do not exist, function will return null.
+        String oldStatus = logic.updateStatus(id, status); // return the old status, if to-do not exist, function will return null.
         if(oldStatus != null)
         {
             result.put("result", oldStatus);
@@ -206,11 +215,11 @@ public class ServerHandler {
         long timeOfStart = System.currentTimeMillis();
         loggers.createRequestLogInfo(request);
 
-        index = DB.isIdExists(id);
+        index = logic.isIdExists(id);
         if(index != -1) // check if to-do exist, index = -1 if to-do not exist.
         {
-            loggers.writeDeleteTodoIntoLogger(id, DB.getTodosSize());
-            newSize = DB.removeTodo(index);
+            loggers.writeDeleteTodoIntoLogger(id, logic.getTodosCount());
+            newSize = logic.removeTodo(index);
             result.put("result", newSize);
             timeOfEnd = System.currentTimeMillis();
             loggers.createRequestLogDebug(timeOfEnd - timeOfStart);
