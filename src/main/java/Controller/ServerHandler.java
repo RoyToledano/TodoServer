@@ -17,16 +17,15 @@ import service.TodoPostgreService;
 
 
 @RestController
-@RequestMapping("/todoServer")
 public class ServerHandler {
 
     // Server logic:
     private final ServerLogic logic = new ServerLogic();
     // DataBases:
-    @Autowired
-    private TodoPostgreService todoPostgreService;
-    @Autowired
-    private TodoMongoService todoMongoService;
+  // @Autowired
+    //private TodoPostgreService todoPostgreService;
+//    @Autowired
+//    private TodoMongoService todoMongoService;
 
     // Loggers, there are 2 loggers;
     // 'request-logger' - receive data about the server requests.
@@ -36,15 +35,14 @@ public class ServerHandler {
     // Json object:
     private JSONObject result;
 
-    public ServerHandler() {
-        logic.setTodosCounter(todoPostgreService.getTodosCount());
-        logic.setPostgreService(todoPostgreService);
-        logic.setMongoService(todoMongoService);
-    }
+
 
     // Return "OK" when reaching this endpoint.
     @GetMapping("/todo/health")
     public ResponseEntity<String> healthReturn(HttpServletRequest request) {
+        //logic.setTodosCounter(todoPostgreService.getTodosCount());
+        //logic.setPostgreService(todoPostgreService);
+
         long timeOfEnd;
         long timeOfStart = System.currentTimeMillis();
         loggers.createRequestLogInfo(request);
