@@ -8,6 +8,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -22,20 +23,19 @@ public class ServerHandler {
     // Server logic:
     private final ServerLogic logic = new ServerLogic();
     // DataBases:
-  // @Autowired
-    //private TodoPostgreService todoPostgreService;
-//    @Autowired
-//    private TodoMongoService todoMongoService;
-
-    // Loggers, there are 2 loggers;
-    // 'request-logger' - receive data about the server requests.
-    // 'to-do-logger' - receive data about the database.
-    private final Loggers loggers = new Loggers();
+    @Autowired
+    private TodoPostgreService todoPostgreService;
+    @Autowired
+    private TodoMongoService todoMongoService;
 
     // Json object:
     private JSONObject result;
 
-
+    public ServerHandler() {
+//        logic.setTodosCounter(todoPostgreService.getTodosCount());
+//        logic.setPostgreService(todoPostgreService);
+//        logic.setMongoService(todoMongoService);
+    }
 
     // Return "OK" when reaching this endpoint.
     @GetMapping("/todo/health")
@@ -45,9 +45,7 @@ public class ServerHandler {
 
         long timeOfEnd;
         long timeOfStart = System.currentTimeMillis();
-        loggers.createRequestLogInfo(request);
         timeOfEnd = System.currentTimeMillis();
-        loggers.createRequestLogDebug(timeOfEnd - timeOfStart);
         return new ResponseEntity<>("OK", HttpStatus.OK);
     }
 
@@ -63,27 +61,22 @@ public class ServerHandler {
         // logger:
         long timeOfEnd;
         long timeOfStart = System.currentTimeMillis();
-        loggers.createRequestLogInfo(request);
 
         if(logic.isTitleExists(reqTitle)) // in case title is invalid
         {
             String message = "Error: TODO with the title '" + reqTitle + "' already exists in the system";
             result.put("errorMessage",message);
-            loggers.generalTodoLoggerError(message);
             return new ResponseEntity<>(result.toString(), HttpStatus.CONFLICT);
         }
         else if (logic.isDueDateNotValid(reqDueDate)) // in case due date is in the past.
         {
             String message = "Error: Can't create new TODO that its due date is in the past";
             result.put("errorMessage",message);
-            loggers.generalTodoLoggerError(message);
             return ResponseEntity.status(HttpStatus.CONFLICT).body(result.toString());
         }
-        loggers.writeCreateTodoIntoLogger(reqTitle, logic.getTodosCount());
         logic.createTodo(reqTitle,reqContent,reqDueDate);
         result.put("result", logic.getLastElement().getId());
         timeOfEnd = System.currentTimeMillis();
-        loggers.createRequestLogDebug(timeOfEnd - timeOfStart);
         return new ResponseEntity<>(result.toString(),HttpStatus.OK);
     }
 
@@ -99,7 +92,6 @@ public class ServerHandler {
         // logger:
         long timeOfEnd;
         long timeOfStart = System.currentTimeMillis();
-        loggers.createRequestLogInfo(request);
 
         if(!persistenceMethod.equals("POSTGRES") && !persistenceMethod.equals("MONGO")){
             String message = "Error: The given persistence method is invalid.";
@@ -116,9 +108,7 @@ public class ServerHandler {
         }
         else {
             result.put("result", count);
-            loggers.writeTodosCountIntoLogger(status, count);
             timeOfEnd = System.currentTimeMillis();
-            loggers.createRequestLogDebug(timeOfEnd - timeOfStart);
             return new ResponseEntity<>(result.toString(),HttpStatus.OK);
         }
 
@@ -137,7 +127,6 @@ public class ServerHandler {
         // logger:
         long timeOfEnd;
         long timeOfStart = System.currentTimeMillis();
-        loggers.createRequestLogInfo(request);
 
         if(!persistenceMethod.equals("POSTGRES") && !persistenceMethod.equals("MONGO")){
             String message = "Error: The given persistence method is invalid.";
@@ -154,9 +143,7 @@ public class ServerHandler {
 
         JSONArray resultArr = logic.createJsonArray(sortBy,status, persistenceMethod); // creating json array.
         result.put("result", resultArr);
-        loggers.writeTodosDataIntoLogger(status,sortBy,resultArr.length(), logic.getTodosCount());
         timeOfEnd = System.currentTimeMillis();
-        loggers.createRequestLogDebug(timeOfEnd - timeOfStart);
         return new ResponseEntity<>(result.toString(),HttpStatus.OK);
 
     }
@@ -172,9 +159,6 @@ public class ServerHandler {
         // logger:
         long timeOfEnd;
         long timeOfStart = System.currentTimeMillis();
-        loggers.createRequestLogInfo(request);
-
-        loggers.writeUpdateTodoStatusBeforeUptade(id,status);
 
         if(!logic.isGivenStatusValid(status)) // status is not valid
         {
@@ -187,16 +171,13 @@ public class ServerHandler {
         if(oldStatus != null)
         {
             result.put("result", oldStatus);
-            loggers.writeUpdateTodoStatusAfterUptade(id,status,oldStatus);
             timeOfEnd = System.currentTimeMillis();
-            loggers.createRequestLogDebug(timeOfEnd - timeOfStart);
             return new ResponseEntity<>(result.toString(),HttpStatus.OK);
         }
         else // The to-do not found.
         {
             String message = "Error: no such TODO with id " + id;
             result.put("errorMessage",message);
-           loggers.generalTodoLoggerError(message);
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(result.toString());
         }
     }
@@ -211,67 +192,21 @@ public class ServerHandler {
         // logger:
         long timeOfEnd;
         long timeOfStart = System.currentTimeMillis();
-        loggers.createRequestLogInfo(request);
 
         index = logic.isIdExists(id);
         if(index != -1) // check if to-do exist, index = -1 if to-do not exist.
         {
-            loggers.writeDeleteTodoIntoLogger(id, logic.getTodosCount());
             newSize = logic.removeTodo(index);
             result.put("result", newSize);
             timeOfEnd = System.currentTimeMillis();
-            loggers.createRequestLogDebug(timeOfEnd - timeOfStart);
             return new ResponseEntity<>(result.toString(),HttpStatus.OK);
         }
         else
         {
             String message = "Error: no such TODO with id " + id;
             result.put("errorMessage",message);
-            loggers.generalTodoLoggerError(message);
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(result.toString());
         }
-    }
-
-    // This endpoint receives a logger name, and returns his current level.
-    @GetMapping("/logs/level")
-    private String getLoggerCurrentLevel(@RequestParam (name = "logger-name") String loggerName, HttpServletRequest request)
-    {
-        String level;
-
-        // logger:
-        long timeOfEnd;
-        long timeOfStart = System.currentTimeMillis();
-        loggers.createRequestLogInfo(request);
-
-        if(!loggerName.equals("request-logger") && !loggerName.equals("todo-logger"))
-        {
-            return ("Failure: no such log file exists");
-        }
-
-        level = loggers.getLoggerLevel(loggerName);
-        timeOfEnd = System.currentTimeMillis();
-        loggers.createRequestLogDebug(timeOfEnd - timeOfStart);
-        return ("Success: " + level.toUpperCase());
-    }
-
-    // This endpoint receives a logger name and a logger level, and change his level to the given level.
-    @PutMapping("/logs/level")
-    private String updateLoggerLevel(@RequestParam (name = "logger-name") String loggerName, @RequestParam (name = "logger-level") String loggerLevel, HttpServletRequest request)
-    {
-        // logger:
-        long timeOfEnd;
-        long timeOfStart = System.currentTimeMillis();
-        loggers.createRequestLogInfo(request);
-
-        if(loggers.checkULL(loggerName,loggerLevel))
-        {
-            return ("Failure: no such log file exists or invalid level");
-        }
-
-        loggers.setLoggerLevel(loggerName,loggerLevel);
-        timeOfEnd = System.currentTimeMillis();
-        loggers.createRequestLogDebug(timeOfEnd - timeOfStart);
-        return ("Success: " + loggerLevel.toUpperCase());
     }
 }
 
