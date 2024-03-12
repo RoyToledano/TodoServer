@@ -1,29 +1,29 @@
 # TodoServer
 
-## Technologies used
+## 1) Technologies used
 
 * IDE: IntelliJ
 * Programming language: Java 17
 * Framework: Spring Boot
-* Logging framework: Logback (built in logger in spring boot)
+* Database: Postgresql, MongoDB
 * Containerization: Docker
 
-## Overview
+## 2) Overview
 
 This is an HTTP server developed using Spring Boot and is a TODO app. TODO apps allow users to maintain a list of things they need to do.
-It features multiple endpoints which allow clients to manage the server's todos as well as setting logger levels for the server.
+It features multiple endpoints which allow clients to manage the server's todos.
 
 This project focus on these concepts:
 1. Client-server model
-2. Logging 
+2. Databases
 3. Containerization 
 
-## Usage
+## 3) Usage
 The server's default listening port is 9285.
 
 **Server endpoints:**
 
-### 1) Health
+### 3.1) Health
 
 `/todo/health`
 
@@ -32,7 +32,7 @@ Method: **GET**
 This is a sanity endpoint used to check that the server is up and running.
 
 
-### 2) Create new TODO
+### 3.2) Create new TODO
 
 `/todo`
 
@@ -60,26 +60,31 @@ If the operation can be invoked (all verification went OK): the response code wi
 The result will hold the (newly) assigned TODO number.
 
 
-### 3) Get TODOs count
+### 3.3) Get TODOs count
 
 `/todo/size`
 
 Method: **GET**
 
-Query Parameter: **status**. Value: ALL, PENDING, LATE, DONE (in capital case only).
+Query Parameter:
+* **status**. Value: ALL, PENDING, LATE, DONE (in capital case only).
+* **persistenceMethod**. Value: POSTGRES, MONGO
 
 Returns the total number of TODOs in the system, according to the given filter.
+The persistence method dictates which of the DBs will the info come from.
 
 
-### 4) Get TODOs data
+### 3.4) Get TODOs data
 
 `/todo/content`
 
 Method: **GET**
 
-Query Parameter: **status**. Value: ALL, PENDING, LATE, DONE.
+Query Parameter: 
+* **status**. Value: ALL, PENDING, LATE, DONE.
 
-Query Parameter: **sortBy**. Value: ID, DUE_DATE, TITLE (Note: This is an optional query parameter. It does not have to appear.) 
+* **sortBy**. Value: ID, DUE_DATE, TITLE (Note: This is an optional query parameter. It does not have to appear.) 
+* **persistenceMethod**. Value: POSTGRES, MONGO
 
 The response will be a json array. The array will hold json objects that describe a single todo. 
 Each TODO object holds:
@@ -103,7 +108,7 @@ In case sortBy is not supplied, the sorting is done by ID
 If no TODOs are available the result is an empty array.
 
 
-### 5) Update TODO status
+### 3.5) Update TODO status
 
 `/todo`
 
@@ -116,7 +121,7 @@ Query Parameter: **status**. The status to update. It can be PENDING, LATE, or D
 If the TODO exists (according to the id), its status gets updated.
 
 
-### 6) Delete TODO
+### 3.6) Delete TODO
 
 `/todo`
 
@@ -127,46 +132,26 @@ Query Parameter: **id**. Number. The TODO id
 Deletes a todo with the given id.
 
 
-### 7) Get current logger level
+## 4) Docker Containers
 
-`/logs/level`
+### 4.1) Setting up the environment
+In the release section of this repo you will find a docker-compose.yml file. Download this file and place it in your sdesired path. Make sure you have the docker engine installed and running.
 
-Method: **GET**
-
-Query Parameter: **logger-name**. The name of the logger (request-logger or todo-logger).
-
-Returns the current level of the given logger.
-
-
-### 8) Get current logger level
-
-`/logs/level`
-
-Method: **PUT**
-
-Query Parameter: **logger-name**. The name of the logger (request-logger or todo-logger).
-
-Query Parameter: **logger-level** Value: ERROR, INFO, DEBUG
-
-Sets the given logger's level to the given level.
-
-## Loggers
-The server keeps logs of all requests sent to it and all todos added. The log files are respectively called:
-* `requests.log:` In charge of logging each incoming request of any type to the server.
-* `todos.log:` In charge of logging information regarding the todo management
-
-Each log will hold the following structure ({} are placeholders):
+### 5.2) Run the server
+In order to run the server you need to use the following command:
 ```
-{date-time} {log-level}: {log-message} | request #{request-number}
+    docker-compose up
 ```
 
-## Docker Containers
-You can use the docker image from Docker-Hub, two diffrent ways to do that:
-* Pull the docker image through Docker-Desktop by using the tag: ```roytoledano/todo-server:1.0```
-* Use the following command in the terminal:
+This will automatically run the server's container (listening port 3769) as well a container of MongoDB and a container of Postgresql for this server's todo Databases
+
+### 5.3) Shutting down the server
+In order to shut down the server you need to use the following command:
+
 ```
-   docker pull roytoledano/todo-server:1.0
+    docker-compose down
 ```
+
 (You need to install docker on your machine in order to run it properly)
 
 
